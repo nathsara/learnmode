@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      margin: 0;
+      background-color: #f9fafb;
+      color: #111827;
+    }
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status-badge {
+      display: block;
+      text-align: center;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+    .status-active {
+      background-color: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .status-unlocked {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin: 10px 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    textarea, select, button {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    button {
+      margin-top: 14px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      font-weight: 600;
+      padding: 10px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-relock {
+      background-color: #059669;
+    }
+    .btn-relock:hover {
+      background-color: #047857;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>LearnMode 🛡️</h2>
+  
+  <div id="status-badge" class="status-badge status-active">
+    LearnMode Active (AI Blocked)
+  </div>
+
+  <!-- Form displayed when LearnMode is ON -->
+  <div id="unlock-form">
+    <label for="reason">Reason for Unlocking AI:</label>
+    <textarea id="reason" placeholder="e.g., Debugging an edge case in my JS state listener..."></textarea>
+
+    <label for="category">Activity Category:</label>
+    <select id="category">
+      <option value="productive">Productive (Green)</option>
+      <option value="neutral">Neutral (Yellow)</option>
+      <option value="unproductive">Unproductive (Red)</option>
+    </select>
+
+    <label for="timer">Auto-Relock After:</label>
+    <select id="timer">
+      <option value="1">1 Hour</option>
+      <option value="3">3 Hours</option>
+      <option value="5">5 Hours</option>
+      <option value="12">12 Hours</option>
+      <option value="24">24 Hours</option>
+    </select>
+
+    <button id="action-btn">Log Intent & Unlock AI</button>
+  </div>
+
+  <!-- Button displayed when LearnMode is OFF -->
+  <div id="relock-container" class="hidden">
+    <button id="relock-btn" class="btn-relock">Re-Enable LearnMode Now</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
