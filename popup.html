@@ -3,144 +3,291 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body {
-      width: 320px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 16px;
-      margin: 0;
-      background-color: #f9fafb;
-      color: #111827;
+    :root {
+      --bg-color: #ffffff;
+      --text-black: #000000;
+      --toggle-on: #fbff00;
+      --toggle-off: #ebebeb;
+      --btn-bg: #ebebeb;
+      --border-light: #e5e7eb;
+      
+      /* Highlights & Text Colors */
+      --prod-bg: #c9e3aa;
+      --prod-text: #005214;
+      --neut-bg: #ebebeb;
+      --neut-text: #000000;
+      --unprod-bg: #eba98f;
+      --unprod-text: #662c00;
     }
-    h2 { margin: 0 0 12px 0; font-size: 1.1rem; }
-    .status-badge {
-      display: block;
-      text-align: center;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      margin-bottom: 14px;
-    }
-    .status-active { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-    .status-unlocked { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-    label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #374151;
-      margin: 10px 0 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    textarea, select, button {
-      width: 100%;
-      box-sizing: border-box;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      padding: 8px 10px;
-      font-size: 0.85rem;
-      font-family: inherit;
-    }
-    textarea { resize: vertical; min-height: 45px; }
-    button {
-      margin-top: 12px;
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      font-weight: 600;
-      padding: 10px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    button:hover { background-color: #1d4ed8; }
-    .btn-relock { background-color: #059669; }
-    .btn-relock:hover { background-color: #047857; }
-    .btn-secondary {
-      background-color: #e5e7eb;
-      color: #374151;
-      font-size: 0.75rem;
-      padding: 6px;
-      margin-top: 8px;
-    }
-    .btn-secondary:hover { background-color: #d1d5db; }
-    .hidden { display: none; }
 
-    /* Calendar Grid Section */
-    .section-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: #4b5563;
-      margin: 16px 0 8px 0;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 12px;
+    body {
+      width: 310px;
+      font-family: "Times New Roman", Times, serif;
+      padding: 14px;
+      margin: 0;
+      background-color: var(--bg-color);
+      color: var(--text-black);
+      box-sizing: border-box;
     }
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
+
+    /* Header Section */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .brand {
+      font-size: 1.25rem;
+      font-weight: normal;
+      color: var(--text-black);
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* Minimal Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--toggle-off);
+      transition: .2s;
+      border-radius: 22px;
+      border: 1px solid #ccc;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #ffffff;
+      transition: .2s;
+      border-radius: 50%;
+      border: 1px solid #aaa;
+    }
+    input:checked + .slider { background-color: var(--toggle-on); }
+    input:checked + .slider:before { transform: translateX(21px); }
+
+    .help-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 1rem;
+      color: var(--text-black);
+      padding: 0 2px;
+    }
+
+    /* Month Control Header */
+    .month-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.95rem;
       margin-bottom: 8px;
     }
-    .day-cell {
-      aspect-ratio: 1;
-      border-radius: 4px;
-      background-color: #e5e7eb;
+
+    .nav-btn {
+      background: none;
+      border: none;
       cursor: pointer;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 0.9rem;
+      color: var(--text-black);
+      padding: 0 4px;
+    }
+
+    .weekdays-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.75rem;
+      margin-bottom: 6px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 12px;
+    }
+
+    /* Minimalistic Circle Highlights for Calendar Dates */
+    .day-box {
+      aspect-ratio: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.65rem;
-      color: #6b7280;
-      font-weight: 600;
-      transition: transform 0.1s ease;
+      font-size: 0.8rem;
+      cursor: pointer;
+      user-select: none;
+      background: transparent;
     }
-    .day-cell:hover { transform: scale(1.1); }
-    .color-none { background-color: #e5e7eb; color: #9ca3af; }
-    .color-yellow { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
-    .color-green { background-color: #86efac; color: #166534; border: 1px solid #4ade80; }
-    .color-red { background-color: #fca5a5; color: #991b1b; border: 1px solid #f87171; }
+    
+    .day-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: transparent;
+      color: var(--text-black);
+    }
 
-    /* Log Details Drawer */
-    .log-details {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      padding: 8px 10px;
+    /* Circle Highlight Colors */
+    .circle-green { background-color: var(--prod-bg); }
+    .circle-yellow { background-color: var(--neut-bg); }
+    .circle-red { background-color: var(--unprod-bg); }
+    .today-circle { font-weight: bold; text-decoration: underline; }
+
+    /* Log Details View */
+    .logs-card {
+      border-top: 1px solid var(--border-light);
+      padding-top: 8px;
+      font-size: 0.8rem;
       max-height: 100px;
       overflow-y: auto;
-      font-size: 0.75rem;
+      margin-bottom: 10px;
     }
-    .log-entry { padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
-    .log-entry:last-child { border-bottom: none; }
+
+    .log-row {
+      margin-bottom: 6px;
+      line-height: 1.3;
+      color: var(--text-black);
+    }
+
+    /* Tag Specific Highlight Rules */
     .tag {
-      font-weight: 700;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      padding: 2px 4px;
+      padding: 1px 4px;
       border-radius: 3px;
+      font-size: 0.75rem;
+      margin-right: 4px;
     }
-    .tag-productive { background: #d1fae5; color: #065f46; }
-    .tag-neutral { background: #fef3c7; color: #92400e; }
-    .tag-unproductive { background: #fee2e2; color: #991b1b; }
+    .tag-productive { background-color: var(--prod-bg); color: var(--prod-text); }
+    .tag-neutral { background-color: var(--neut-bg); color: var(--neut-text); }
+    .tag-unproductive { background-color: var(--unprod-bg); color: var(--unprod-text); }
+
+    /* Button Styles */
+    .btn-action {
+      width: 100%;
+      background-color: var(--btn-bg);
+      border: none;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 0.85rem;
+      color: var(--text-black);
+      cursor: pointer;
+    }
+
+    .btn-back {
+      background-color: var(--btn-bg);
+      border: none;
+      border-radius: 4px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      color: var(--text-black);
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    /* Intent Form Screen */
+    .form-screen {
+      padding-top: 4px;
+    }
+
+    .form-screen label {
+      display: block;
+      font-size: 0.8rem;
+      margin: 8px 0 4px 0;
+      color: var(--text-black);
+    }
+
+    .form-screen textarea,
+    .form-screen select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 0.85rem;
+      background-color: #ffffff;
+      color: var(--text-black);
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <h2>LearnMode 🛡️</h2>
-  
-  <div id="status-badge" class="status-badge status-active">
-    LearnMode Active (AI Blocked)
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      lemonade 🍋
+    </div>
+    <div class="toggle-group">
+      <span id="toggle-status">ON</span>
+      <label class="switch">
+        <input type="checkbox" id="mode-toggle" checked>
+        <span class="slider"></span>
+      </label>
+      <button id="help-btn" class="help-btn" title="Why Lemonade?">?</button>
+    </div>
   </div>
 
-  <div id="unlock-form">
-    <label for="reason">Reason for Unlocking AI:</label>
-    <textarea id="reason" placeholder="e.g., Debugging an edge case in my JS state listener..."></textarea>
+  <!-- MAIN SCREEN: CALENDAR VIEW (Visible when Lemonade is ON or OFF) -->
+  <div id="calendar-screen">
+    <div class="month-header">
+      <button id="prev-month" class="nav-btn">&laquo;</button>
+      <span id="month-title">AUGUST 2026</span>
+      <button id="next-month" class="nav-btn">&raquo;</button>
+    </div>
+
+    <div class="weekdays-row">
+      <div>Sun</div><div>Mon</div><div>Tues</div><div>Wed</div><div>Thurs</div><div>Fri</div><div>Sat</div>
+    </div>
+
+    <div id="calendar-grid" class="calendar-grid"></div>
+
+    <div id="logs-container" class="logs-card">
+      <span style="color:#666;">Click a date on the calendar to view logs.</span>
+    </div>
+
+    <button id="export-btn" class="btn-action">Export Logs to CSV</button>
+  </div>
+
+  <!-- INTENT FORM SCREEN (Appears ONLY when toggled from ON to OFF) -->
+  <div id="logging-screen" class="form-screen hidden">
+    <button id="cancel-off-btn" class="btn-back">&larr; Back (Keep Lemonade ON)</button>
+    
+    <label for="reason">Notes when Lemonade was exited & re-entered:</label>
+    <textarea id="reason" rows="2" placeholder="e.g., Checking Course 6-9 homework solution..."></textarea>
 
     <label for="category">Activity Category:</label>
     <select id="category">
-      <option value="productive">Productive (Green)</option>
-      <option value="neutral">Neutral (Yellow)</option>
-      <option value="unproductive">Unproductive (Red)</option>
+      <option value="productive">Productive</option>
+      <option value="neutral">Neutral</option>
+      <option value="unproductive">Unproductive</option>
     </select>
 
     <label for="timer">Auto-Relock After:</label>
@@ -148,25 +295,21 @@
       <option value="1">1 Hour</option>
       <option value="3">3 Hours</option>
       <option value="5">5 Hours</option>
-      <option value="12">12 Hours</option>
-      <option value="24">24 Hours</option>
+      <option value="never">Make NEVER an option!</option>
     </select>
 
-    <button id="action-btn">Log Intent & Unlock AI</button>
+    <button id="exit-lemonade-btn" class="btn-action" style="margin-top: 12px;">EXIT LEMONADE</button>
   </div>
 
-  <div id="relock-container" class="hidden">
-    <button id="relock-btn" class="btn-relock">Re-Enable LearnMode Now</button>
+  <!-- Why Lemonade Info Screen -->
+  <div id="info-screen" class="form-screen hidden">
+    <button id="close-info-btn" class="btn-back">&larr; Back</button>
+    <h3 style="margin: 4px 0 8px 0; font-size: 0.95rem; font-weight: normal;">Why lemonade?</h3>
+    <ol style="margin: 0; padding-left: 18px; font-size: 0.8rem; line-height: 1.4; color: var(--text-black);">
+      <li>I originally called this project <i>learnmode</i> and realized it had all the letters for <b>lemonade</b>!</li>
+      <li>A play off of the age-old adage, <i>"When life gives you lemons, make lemonade."</i> Unrestricted access to AI has made it easy to echo but hard to learn. I'm adding friction back to my learning by auto-blocking major AIs and requiring myself to log intent in order to unblock.</li>
+    </ol>
   </div>
-
-  <!-- Activity Grid Section -->
-  <div class="section-title">14-Day Activity Log</div>
-  <div id="calendar-grid" class="grid-container"></div>
-  <div id="log-details" class="log-details">
-    <span style="color:#9ca3af;">Click a day above to inspect logs.</span>
-  </div>
-
-  <button id="export-btn" class="btn-secondary">Export Logs to CSV</button>
 
   <script src="popup.js"></script>
 </body>

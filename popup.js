@@ -1,169 +1,276 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const statusBadge = document.getElementById("status-badge");
-  const unlockForm = document.getElementById("unlock-form");
-  const relockContainer = document.getElementById("relock-container");
+  const modeToggle = document.getElementById("mode-toggle");
+  const toggleStatus = document.getElementById("toggle-status");
+  const calendarScreen = document.getElementById("calendar-screen");
+  const loggingScreen = document.getElementById("logging-screen");
+  const infoScreen = document.getElementById("info-screen");
+  
+  const monthTitle = document.getElementById("month-title");
+  const calendarGrid = document.getElementById("calendar-grid");
+  const prevMonthBtn = document.getElementById("prev-month");
+  const nextMonthBtn = document.getElementById("next-month");
+  const logsContainer = document.getElementById("logs-container");
+  
   const reasonInput = document.getElementById("reason");
   const categorySelect = document.getElementById("category");
   const timerSelect = document.getElementById("timer");
-  const actionBtn = document.getElementById("action-btn");
-  const relockBtn = document.getElementById("relock-btn");
-  const calendarGrid = document.getElementById("calendar-grid");
-  const logDetails = document.getElementById("log-details");
+  const exitLemonadeBtn = document.getElementById("exit-lemonade-btn");
+  const cancelOffBtn = document.getElementById("cancel-off-btn");
   const exportBtn = document.getElementById("export-btn");
+  const helpBtn = document.getElementById("help-btn");
+  const closeInfoBtn = document.getElementById("close-info-btn");
 
-  // Load initial data safely
+  let viewDate = new Date();
   const data = await chrome.storage.local.get(["learnModeActive", "logs"]);
   let isActive = data.learnModeActive ?? true;
   let logs = Array.isArray(data.logs) ? data.logs : [];
 
-  function updateUI() {
-    if (isActive) {
-      statusBadge.textContent = "LearnMode Active (AI Blocked)";
-      statusBadge.className = "status-badge status-active";
-      if (unlockForm) unlockForm.classList.remove("hidden");
-      if (relockContainer) relockContainer.classList.add("hidden");
-    } else {
-      statusBadge.textContent = "LearnMode Unlocked";
-      statusBadge.className = "status-badge status-unlocked";
-      if (unlockForm) unlockForm.classList.add("hidden");
-      if (relockContainer) relockContainer.classList.remove("hidden");
+  // Helper to get local YYYY-MM-DD format (avoids UTC timezone shifts)
+  function getLocalDateString(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function updateScreenView() {
+    modeToggle.checked = isActive;
+    toggleStatus.textContent = isActive ? "ON" : "OFF";
+
+    calendarScreen.classList.remove("hidden");
+    loggingScreen.classList.add("hidden");
+    infoScreen.classList.add("hidden");
+  }
+
+  function renderCalendar() {
+    if (!calendarGrid) return;
+    calendarGrid.innerHTML = "";
+
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    const monthNames = [
+      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+      "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+    ];
+
+    monthTitle.textContent = `${monthNames[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = getLocalDateString(new Date());
+
+    for (let i = 0; i < firstDay; i++) {
+      const emptyBox = document.createElement("div");
+      emptyBox.className = "day-box";
+      calendarGrid.appendChild(emptyBox);
     }
-    renderCalendarGrid();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      const dayLogs = logs.filter(l => {
+        if (!l || !l.timestamp) return false;
+        const logLocalDate = getLocalDateString(new Date(l.timestamp));
+        return logLocalDate === cellDateStr;
+      });
+      
+      const dominantColor = getDominantColor(dayLogs);
+      
+      const box = document.createElement("div");
+      box.className = "day-box";
+
+      const circle = document.createElement("div");
+      circle.className = `day-circle ${dominantColor ? 'circle-' + dominantColor : ''}`;
+      circle.textContent = day;
+
+      if (cellDateStr === todayStr) {
+        circle.classList.add("today-circle");
+      }
+
+      box.appendChild(circle);
+      box.addEventListener("click", () => showDayLogs(cellDateStr, dayLogs));
+      calendarGrid.appendChild(box);
+    }
   }
 
   function getDominantColor(dayLogs) {
-    if (!dayLogs || dayLogs.length === 0) return "none";
+    if (!dayLogs || dayLogs.length === 0) return null;
     const categories = dayLogs.map(l => l.category);
     if (categories.includes("unproductive")) return "red";
     if (categories.includes("productive")) return "green";
     if (categories.includes("neutral")) return "yellow";
-    return "none";
-  }
-
-  function renderCalendarGrid() {
-    if (!calendarGrid) return;
-    calendarGrid.innerHTML = "";
-    const today = new Date();
-
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
-
-      const dayLogs = logs.filter(log => log && log.timestamp && log.timestamp.startsWith(dateStr));
-      const dominantColor = getDominantColor(dayLogs);
-
-      const cell = document.createElement("div");
-      cell.className = `day-cell color-${dominantColor}`;
-      cell.textContent = d.getDate();
-      cell.title = `${dateStr} (${dayLogs.length} logs)`;
-
-      cell.addEventListener("click", () => showDayLogs(dateStr, dayLogs));
-      calendarGrid.appendChild(cell);
-    }
+    return null;
   }
 
   function showDayLogs(dateStr, dayLogs) {
-    if (!logDetails) return;
+    if (!logsContainer) return;
     if (!dayLogs || dayLogs.length === 0) {
-      logDetails.innerHTML = `<strong>${dateStr}</strong><br><span style="color:#9ca3af;">No AI logs recorded.</span>`;
+      logsContainer.innerHTML = `<strong>${dateStr}</strong><br><span style="color:#666;">No logs recorded.</span>`;
       return;
     }
 
-    logDetails.innerHTML = `<strong>${dateStr} Logs:</strong><br>` + 
+    logsContainer.innerHTML = `<strong>${dateStr} Logs:</strong><br>` + 
       dayLogs.map(l => {
-        const time = new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const exitTime = new Date(l.timestamp);
+        const startTimeStr = exitTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let timeRange = startTimeStr;
+
+        if (l.reEnteredAt) {
+          // If manually re-entered, show actual exit -> re-entry interval
+          const reEntryTimeStr = new Date(l.reEnteredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          timeRange = `${startTimeStr} - ${reEntryTimeStr}`;
+        } else if (l.autoRelockHours === "never") {
+          timeRange = `${startTimeStr} &rarr;`;
+        } else if (l.autoRelockHours) {
+          // Estimated end time if not re-entered yet
+          const endTimeStr = new Date(exitTime.getTime() + (parseInt(l.autoRelockHours, 10) * 3600000))
+            .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          timeRange = `${startTimeStr} - ${endTimeStr}`;
+        }
+
         return `
-          <div class="log-entry">
-            <span class="tag tag-${l.category}">${l.category}</span> <strong>${time}</strong>: ${l.reason}
+          <div class="log-row">
+            <span class="tag tag-${l.category}">${l.category}</span> ${timeRange} ${l.reason}
           </div>
         `;
       }).join('');
   }
 
-  // Handle Unlocking
-  if (actionBtn) {
-    actionBtn.addEventListener("click", async () => {
-      const reasonText = reasonInput ? reasonInput.value.trim() : "";
-
-      if (!reasonText) {
-        alert("Please enter a short reason before unlocking AI tools.");
-        return;
-      }
-
-      const hours = timerSelect ? parseInt(timerSelect.value, 10) : 1;
-      const newLog = {
-        timestamp: new Date().toISOString(),
-        reason: reasonText,
-        category: categorySelect ? categorySelect.value : "productive",
-        autoRelockHours: hours
-      };
-
-      try {
-        const currentData = await chrome.storage.local.get(["logs"]);
-        const updatedLogs = Array.isArray(currentData.logs) ? currentData.logs : [];
-        updatedLogs.push(newLog);
-
-        await chrome.storage.local.set({
-          learnModeActive: false,
-          logs: updatedLogs
-        });
-
-        // Set Alarm safely
-        if (chrome.alarms) {
-          await chrome.alarms.create("autoRelockAlarm", { delayInMinutes: hours * 60 });
+  // Toggle Switch Handler
+  modeToggle.addEventListener("change", async () => {
+    if (!modeToggle.checked) {
+      // Switched from ON to OFF -> Show Intent Screen
+      calendarScreen.classList.add("hidden");
+      loggingScreen.classList.remove("hidden");
+      toggleStatus.textContent = "OFF";
+    } else {
+      // Switched back to ON -> Mark re-entry timestamp on active exit log & lock
+      const currentData = await chrome.storage.local.get(["logs"]);
+      let updatedLogs = Array.isArray(currentData.logs) ? currentData.logs : [];
+      
+      // Update latest log that hasn't recorded a re-entry yet
+      for (let i = updatedLogs.length - 1; i >= 0; i--) {
+        if (!updatedLogs[i].reEnteredAt) {
+          updatedLogs[i].reEnteredAt = new Date().toISOString();
+          break;
         }
-
-        logs = updatedLogs;
-        isActive = false;
-        if (reasonInput) reasonInput.value = "";
-        updateUI();
-      } catch (err) {
-        console.error("Error saving log:", err);
       }
-    });
-  }
 
-  // Handle Re-Locking
-  if (relockBtn) {
-    relockBtn.addEventListener("click", async () => {
-      if (chrome.alarms) {
-        await chrome.alarms.clear("autoRelockAlarm");
-      }
-      await chrome.storage.local.set({ learnModeActive: true });
+      await chrome.storage.local.set({ 
+        learnModeActive: true,
+        logs: updatedLogs
+      });
+
+      if (chrome.alarms) chrome.alarms.clear("autoRelockAlarm");
+      
+      logs = updatedLogs;
       isActive = true;
-      updateUI();
+      updateScreenView();
+      renderCalendar();
+    }
+  });
+
+  // Cancel OFF intent
+  cancelOffBtn.addEventListener("click", () => {
+    isActive = true;
+    modeToggle.checked = true;
+    updateScreenView();
+  });
+
+  // Submit EXIT LEMONADE Intent
+  exitLemonadeBtn.addEventListener("click", async () => {
+    const reasonText = reasonInput.value.trim();
+
+    if (!reasonText) {
+      alert("Please enter a short reason before exiting Lemonade.");
+      return;
+    }
+
+    const timerVal = timerSelect.value;
+    const newLog = {
+      timestamp: new Date().toISOString(),
+      reEnteredAt: null, // Will be filled when toggled back ON
+      reason: reasonText,
+      category: categorySelect.value,
+      autoRelockHours: timerVal === "never" ? "never" : parseInt(timerVal, 10)
+    };
+
+    const currentData = await chrome.storage.local.get(["logs"]);
+    const updatedLogs = Array.isArray(currentData.logs) ? currentData.logs : [];
+    updatedLogs.push(newLog);
+
+    await chrome.storage.local.set({
+      learnModeActive: false,
+      logs: updatedLogs
     });
-  }
 
-  // Handle CSV Export
-  if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
-      if (!logs || logs.length === 0) {
-        alert("No logs available to export.");
-        return;
-      }
+    if (timerVal !== "never" && chrome.alarms) {
+      const hours = parseInt(timerVal, 10);
+      await chrome.alarms.create("autoRelockAlarm", { delayInMinutes: hours * 60 });
+    } else if (timerVal === "never" && chrome.alarms) {
+      await chrome.alarms.clear("autoRelockAlarm");
+    }
 
-      const headers = ["Timestamp", "Category", "AutoRelockHours", "Reason"];
-      const rows = logs.map(l => [
-        `"${l.timestamp}"`,
-        `"${l.category}"`,
-        l.autoRelockHours,
-        `"${(l.reason || "").replace(/"/g, '""')}"`
-      ]);
+    logs = updatedLogs;
+    isActive = false;
+    reasonInput.value = "";
+    updateScreenView();
+    renderCalendar();
+  });
 
-      const csvContent = "data:text/csv;charset=utf-8," + 
-        [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  // Month navigation
+  prevMonthBtn.addEventListener("click", () => {
+    viewDate.setMonth(viewDate.getMonth() - 1);
+    renderCalendar();
+  });
 
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `learnmode_logs_${new Date().toISOString().split("T")[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-  }
+  nextMonthBtn.addEventListener("click", () => {
+    viewDate.setMonth(viewDate.getMonth() + 1);
+    renderCalendar();
+  });
 
-  updateUI();
+  // Info Screen
+  helpBtn.addEventListener("click", () => {
+    calendarScreen.classList.add("hidden");
+    loggingScreen.classList.add("hidden");
+    infoScreen.classList.remove("hidden");
+  });
+
+  closeInfoBtn.addEventListener("click", () => {
+    infoScreen.classList.add("hidden");
+    updateScreenView();
+  });
+
+  // Export CSV
+  exportBtn.addEventListener("click", () => {
+    if (!logs || logs.length === 0) {
+      alert("No logs available to export.");
+      return;
+    }
+
+    const headers = ["Timestamp (Exit)", "ReEnteredAt", "Category", "AutoRelockHours", "Reason"];
+    const rows = logs.map(l => [
+      `"${l.timestamp}"`,
+      `"${l.reEnteredAt || ""}"`,
+      `"${l.category}"`,
+      `"${l.autoRelockHours}"`,
+      `"${(l.reason || "").replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `lemonade_logs_${getLocalDateString(new Date())}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  updateScreenView();
+  renderCalendar();
 });

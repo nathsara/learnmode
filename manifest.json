@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LearnMode",
-  "version": "0.2.0",
-  "description": "Friction and intent logging for AI tool usage.",
+  "name": "Lemonade",
+  "version": "0.3.0",
+  "description": "Add friction back to learning by auto-blocking major AI tools.",
   "permissions": [
     "declarativeNetRequest",
     "storage",
@@ -10,6 +10,19 @@
     "tabs"
   ],
   "incognito": "spanning",
+  "icons": {
+    "16": "icons/icon-16x16.png",
+    "48": "icons/icon-32x32.png",
+    "128": "icons/icon-512x512.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16x16.png",
+      "48": "icons/icon-32x32.png",
+      "128": "icons/icon-512x512.png"
+    }
+  },
   "host_permissions": [
     "*://*.chatgpt.com/*",
     "*://*.openai.com/*",
@@ -20,8 +33,5 @@
   ],
   "background": {
     "service_worker": "background.js"
-  },
-  "action": {
-    "default_popup": "popup.html"
   }
 }
