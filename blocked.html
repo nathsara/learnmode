@@ -36,12 +36,10 @@
       padding: 4px 12px;
       border-radius: 4px;
       margin-bottom: 24px;
-      /* Defaulting to neutral tag styling per your rules */
       color: #000000;
       background-color: #ebebeb;
     }
 
-    /* Tag styles for reference if you want to classify log types or status tags */
     .tag-productive {
       color: #005214;
       background-color: #c9e3aa;
@@ -98,7 +96,9 @@
     <div class="badge">learnmode active</div>
     <h1>blocked by lemonade 🍋</h1>
     <p>AI tools and AI Mode are currently disabled to add back learning's natural friction.</p>
-    <button class="btn-exit" onclick="history.back()">Back</button>
+    <button class="btn-exit" id="backBtn">Back</button>
   </div>
+
+  <script src="blocked.js"></script>
 </body>
 </html>

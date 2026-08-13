@@ -7,19 +7,19 @@ const BLOCKED_DOMAINS = [
   "copilot.microsoft.com"
 ];
 
-const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
+const BLOCKED_BASE_URL = chrome.runtime.getURL("blocked.html");
 
 function getBlockingRules() {
-  // 1. Domain Redirect Rules -> Redirects blocked AI domains to blocked.html
+  // Domain Redirect Rules
   return BLOCKED_DOMAINS.map((domain, index) => ({
     id: index + 1,
     priority: 1,
     action: {
       type: "redirect",
-      redirect: { url: BLOCKED_URL }
+      redirect: { regexSubstitution: `${BLOCKED_BASE_URL}?target=\\0` }
     },
     condition: {
-      urlFilter: "*://" + domain + "/*",
+      regexFilter: `^https?://([^/]+\\.)?${domain.replace('.', '\\.')}/.*`,
       resourceTypes: ["main_frame"]
     }
   }));
@@ -57,54 +57,47 @@ async function reloadBlockedTabs() {
   }
 }
 
-// Helper to check if a URL is Google AI Mode
 function isAIModeUrl(url) {
   if (!url) return false;
   return url.includes("google.com/search") && url.includes("udm=50");
 }
 
-// Guard 1: Web Navigation for Google AI Mode
+// Guard 1: Web Navigation
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   if (details.frameId !== 0) return;
 
   if (isAIModeUrl(details.url)) {
     const data = await chrome.storage.local.get(["learnModeActive"]);
     if (data.learnModeActive ?? true) {
-      chrome.tabs.update(details.tabId, { url: BLOCKED_URL });
+      const redirectTarget = `${BLOCKED_BASE_URL}?target=${encodeURIComponent(details.url)}`;
+      chrome.tabs.update(details.tabId, { url: redirectTarget });
     }
   }
 });
 
-// Guard 2: Tab Updates for Google AI Mode SPA transitions
+// Guard 2: Tab Updates
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const targetUrl = changeInfo.url || tab.url;
 
-  if (isAIModeUrl(targetUrl)) {
+  if (isAIModeUrl(targetUrl) && !targetUrl.includes(BLOCKED_BASE_URL)) {
     const data = await chrome.storage.local.get(["learnModeActive"]);
     if (data.learnModeActive ?? true) {
-      chrome.tabs.update(tabId, { url: BLOCKED_URL });
+      const redirectTarget = `${BLOCKED_BASE_URL}?target=${encodeURIComponent(targetUrl)}`;
+      chrome.tabs.update(tabId, { url: redirectTarget });
     }
   }
 });
 
-// Listen for state changes to learnModeActive
+// Listen for state changes
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "local" && changes.learnModeActive !== undefined) {
     updateBlockingRules(changes.learnModeActive.newValue);
   }
 });
 
-// Alarm Listener for Auto-Relock
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === "autoRelockAlarm") {
-    await chrome.storage.local.set({ learnModeActive: true });
-  }
-});
-
 // Safe Initialization
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get(["learnModeActive", "logs"]);
-  
   const newState = {
     learnModeActive: data.learnModeActive ?? true,
     logs: data.logs || []
