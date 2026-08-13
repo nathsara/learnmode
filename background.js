@@ -38,10 +38,17 @@ async function updateBlockingRules(enable) {
   }
 }
 
-// Listen for state changes (LearnMode ON vs OFF) in chrome.storage.local
+// Listen for state changes (LearnMode ON vs OFF) in storage
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "local" && changes.learnModeActive) {
     updateBlockingRules(changes.learnModeActive.newValue);
+  }
+});
+
+// Listen for Auto-Relock Alarm trigger
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === "autoRelockAlarm") {
+    await chrome.storage.local.set({ learnModeActive: true });
   }
 });
 

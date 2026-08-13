@@ -5,7 +5,8 @@
   "description": "Friction and intent logging for AI tool usage.",
   "permissions": [
     "declarativeNetRequest",
-    "storage"
+    "storage",
+    "alarms"
   ],
   "host_permissions": [
     "*://*.chatgpt.com/*",
