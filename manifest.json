@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "LearnMode",
+  "version": "0.1.0",
+  "description": "Friction and intent logging for AI tool usage.",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.chatgpt.com/*",
+    "*://*.openai.com/*",
+    "*://*.claude.ai/*",
+    "*://*.gemini.google.com/*",
+    "*://*.perplexity.ai/*",
+    "*://*.copilot.microsoft.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
