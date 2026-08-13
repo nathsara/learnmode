@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "LearnMode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Friction and intent logging for AI tool usage.",
   "permissions": [
     "declarativeNetRequest",
     "storage",
-    "alarms"
+    "alarms",
+    "tabs"
   ],
+  "incognito": "spanning",
   "host_permissions": [
     "*://*.chatgpt.com/*",
     "*://*.openai.com/*",

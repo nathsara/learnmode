@@ -9,27 +9,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   const relockBtn = document.getElementById("relock-btn");
   const calendarGrid = document.getElementById("calendar-grid");
   const logDetails = document.getElementById("log-details");
+  const exportBtn = document.getElementById("export-btn");
 
+  // Load initial data safely
   const data = await chrome.storage.local.get(["learnModeActive", "logs"]);
   let isActive = data.learnModeActive ?? true;
-  let logs = data.logs || [];
+  let logs = Array.isArray(data.logs) ? data.logs : [];
 
   function updateUI() {
     if (isActive) {
       statusBadge.textContent = "LearnMode Active (AI Blocked)";
       statusBadge.className = "status-badge status-active";
-      unlockForm.classList.remove("hidden");
-      relockContainer.classList.add("hidden");
+      if (unlockForm) unlockForm.classList.remove("hidden");
+      if (relockContainer) relockContainer.classList.add("hidden");
     } else {
       statusBadge.textContent = "LearnMode Unlocked";
       statusBadge.className = "status-badge status-unlocked";
-      unlockForm.classList.add("hidden");
-      relockContainer.classList.remove("hidden");
+      if (unlockForm) unlockForm.classList.add("hidden");
+      if (relockContainer) relockContainer.classList.remove("hidden");
     }
     renderCalendarGrid();
   }
 
-  // Calculate strict hierarchy: Red > Green > Yellow
   function getDominantColor(dayLogs) {
     if (!dayLogs || dayLogs.length === 0) return "none";
     const categories = dayLogs.map(l => l.category);
@@ -39,18 +40,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     return "none";
   }
 
-  // Render a 14-day trailing activity calendar
   function renderCalendarGrid() {
+    if (!calendarGrid) return;
     calendarGrid.innerHTML = "";
     const today = new Date();
 
     for (let i = 13; i >= 0; i--) {
       const d = new Date();
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
+      const dateStr = d.toISOString().split("T")[0];
 
-      // Filter logs for this specific date
-      const dayLogs = logs.filter(log => log.timestamp.startsWith(dateStr));
+      const dayLogs = logs.filter(log => log && log.timestamp && log.timestamp.startsWith(dateStr));
       const dominantColor = getDominantColor(dayLogs);
 
       const cell = document.createElement("div");
@@ -64,7 +64,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function showDayLogs(dateStr, dayLogs) {
-    if (dayLogs.length === 0) {
+    if (!logDetails) return;
+    if (!dayLogs || dayLogs.length === 0) {
       logDetails.innerHTML = `<strong>${dateStr}</strong><br><span style="color:#9ca3af;">No AI logs recorded.</span>`;
       return;
     }
@@ -80,45 +81,89 @@ document.addEventListener("DOMContentLoaded", async () => {
       }).join('');
   }
 
-  // Handle Unlocking + Alarm Schedule
-  actionBtn.addEventListener("click", async () => {
-    const reasonText = reasonInput.value.trim();
+  // Handle Unlocking
+  if (actionBtn) {
+    actionBtn.addEventListener("click", async () => {
+      const reasonText = reasonInput ? reasonInput.value.trim() : "";
 
-    if (!reasonText) {
-      alert("Please enter a short reason before unlocking AI tools.");
-      return;
-    }
+      if (!reasonText) {
+        alert("Please enter a short reason before unlocking AI tools.");
+        return;
+      }
 
-    const hours = parseInt(timerSelect.value, 10);
-    const newLog = {
-      timestamp: new Date().toISOString(),
-      reason: reasonText,
-      category: categorySelect.value,
-      autoRelockHours: hours
-    };
+      const hours = timerSelect ? parseInt(timerSelect.value, 10) : 1;
+      const newLog = {
+        timestamp: new Date().toISOString(),
+        reason: reasonText,
+        category: categorySelect ? categorySelect.value : "productive",
+        autoRelockHours: hours
+      };
 
-    logs.push(newLog);
+      try {
+        const currentData = await chrome.storage.local.get(["logs"]);
+        const updatedLogs = Array.isArray(currentData.logs) ? currentData.logs : [];
+        updatedLogs.push(newLog);
 
-    await chrome.storage.local.set({
-      learnModeActive: false,
-      logs: logs
+        await chrome.storage.local.set({
+          learnModeActive: false,
+          logs: updatedLogs
+        });
+
+        // Set Alarm safely
+        if (chrome.alarms) {
+          await chrome.alarms.create("autoRelockAlarm", { delayInMinutes: hours * 60 });
+        }
+
+        logs = updatedLogs;
+        isActive = false;
+        if (reasonInput) reasonInput.value = "";
+        updateUI();
+      } catch (err) {
+        console.error("Error saving log:", err);
+      }
     });
+  }
 
-    // Schedule background alarm for auto-relock
-    await chrome.alarms.create("autoRelockAlarm", { delayInMinutes: hours * 60 });
+  // Handle Re-Locking
+  if (relockBtn) {
+    relockBtn.addEventListener("click", async () => {
+      if (chrome.alarms) {
+        await chrome.alarms.clear("autoRelockAlarm");
+      }
+      await chrome.storage.local.set({ learnModeActive: true });
+      isActive = true;
+      updateUI();
+    });
+  }
 
-    isActive = false;
-    reasonInput.value = "";
-    updateUI();
-  });
+  // Handle CSV Export
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      if (!logs || logs.length === 0) {
+        alert("No logs available to export.");
+        return;
+      }
 
-  // Handle Manual Re-Locking + Clear Alarms
-  relockBtn.addEventListener("click", async () => {
-    await chrome.alarms.clear("autoRelockAlarm");
-    await chrome.storage.local.set({ learnModeActive: true });
-    isActive = true;
-    updateUI();
-  });
+      const headers = ["Timestamp", "Category", "AutoRelockHours", "Reason"];
+      const rows = logs.map(l => [
+        `"${l.timestamp}"`,
+        `"${l.category}"`,
+        l.autoRelockHours,
+        `"${(l.reason || "").replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `learnmode_logs_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
 
   updateUI();
 });

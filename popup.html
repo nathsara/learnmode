@@ -11,10 +11,7 @@
       background-color: #f9fafb;
       color: #111827;
     }
-    h2 {
-      margin: 0 0 12px 0;
-      font-size: 1.1rem;
-    }
+    h2 { margin: 0 0 12px 0; font-size: 1.1rem; }
     .status-badge {
       display: block;
       text-align: center;
@@ -24,16 +21,8 @@
       font-size: 0.85rem;
       margin-bottom: 14px;
     }
-    .status-active {
-      background-color: #d1fae5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-    .status-unlocked {
-      background-color: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5;
-    }
+    .status-active { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    .status-unlocked { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
     label {
       display: block;
       font-size: 0.75rem;
@@ -52,10 +41,7 @@
       font-size: 0.85rem;
       font-family: inherit;
     }
-    textarea {
-      resize: vertical;
-      min-height: 45px;
-    }
+    textarea { resize: vertical; min-height: 45px; }
     button {
       margin-top: 12px;
       background-color: #2563eb;
@@ -69,6 +55,14 @@
     button:hover { background-color: #1d4ed8; }
     .btn-relock { background-color: #059669; }
     .btn-relock:hover { background-color: #047857; }
+    .btn-secondary {
+      background-color: #e5e7eb;
+      color: #374151;
+      font-size: 0.75rem;
+      padding: 6px;
+      margin-top: 8px;
+    }
+    .btn-secondary:hover { background-color: #d1d5db; }
     .hidden { display: none; }
 
     /* Calendar Grid Section */
@@ -101,10 +95,7 @@
       font-weight: 600;
       transition: transform 0.1s ease;
     }
-    .day-cell:hover {
-      transform: scale(1.1);
-    }
-    /* Priority Hierarchy Colors */
+    .day-cell:hover { transform: scale(1.1); }
     .color-none { background-color: #e5e7eb; color: #9ca3af; }
     .color-yellow { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
     .color-green { background-color: #86efac; color: #166534; border: 1px solid #4ade80; }
@@ -116,14 +107,11 @@
       border: 1px solid #e5e7eb;
       border-radius: 6px;
       padding: 8px 10px;
-      max-height: 120px;
+      max-height: 100px;
       overflow-y: auto;
       font-size: 0.75rem;
     }
-    .log-entry {
-      padding: 4px 0;
-      border-bottom: 1px solid #f3f4f6;
-    }
+    .log-entry { padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
     .log-entry:last-child { border-bottom: none; }
     .tag {
       font-weight: 700;
@@ -177,6 +165,8 @@
   <div id="log-details" class="log-details">
     <span style="color:#9ca3af;">Click a day above to inspect logs.</span>
   </div>
+
+  <button id="export-btn" class="btn-secondary">Export Logs to CSV</button>
 
   <script src="popup.js"></script>
 </body>
