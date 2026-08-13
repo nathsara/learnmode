@@ -7,13 +7,19 @@ const BLOCKED_DOMAINS = [
   "copilot.microsoft.com"
 ];
 
+const BLOCKED_URL = chrome.runtime.getURL("blocked.html");
+
 function getBlockingRules() {
+  // 1. Domain Redirect Rules -> Redirects blocked AI domains to blocked.html
   return BLOCKED_DOMAINS.map((domain, index) => ({
     id: index + 1,
     priority: 1,
-    action: { type: "block" },
+    action: {
+      type: "redirect",
+      redirect: { url: BLOCKED_URL }
+    },
     condition: {
-      urlFilter: `*://${domain}/*`,
+      urlFilter: "*://" + domain + "/*",
       resourceTypes: ["main_frame"]
     }
   }));
@@ -26,30 +32,62 @@ async function updateBlockingRules(enable) {
 
   if (enable) {
     await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: existingRuleIds
-    });
-    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existingRuleIds,
       addRules: getBlockingRules()
     });
-    reloadOpenAITabs();
+    reloadBlockedTabs();
   } else {
-    // Completely clear rules when unlocked
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: existingRuleIds
     });
   }
 }
 
-async function reloadOpenAITabs() {
+async function reloadBlockedTabs() {
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
-    if (tab.url && BLOCKED_DOMAINS.some(domain => tab.url.includes(domain))) {
+    if (!tab.url) continue;
+
+    const isDomainMatch = BLOCKED_DOMAINS.some(domain => tab.url.includes(domain));
+    const isGoogleAIMode = tab.url.includes("google.com/search") && tab.url.includes("udm=50");
+
+    if (isDomainMatch || isGoogleAIMode) {
       chrome.tabs.reload(tab.id);
     }
   }
 }
 
-// Listen ONLY for changes to learnModeActive
+// Helper to check if a URL is Google AI Mode
+function isAIModeUrl(url) {
+  if (!url) return false;
+  return url.includes("google.com/search") && url.includes("udm=50");
+}
+
+// Guard 1: Web Navigation for Google AI Mode
+chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+  if (details.frameId !== 0) return;
+
+  if (isAIModeUrl(details.url)) {
+    const data = await chrome.storage.local.get(["learnModeActive"]);
+    if (data.learnModeActive ?? true) {
+      chrome.tabs.update(details.tabId, { url: BLOCKED_URL });
+    }
+  }
+});
+
+// Guard 2: Tab Updates for Google AI Mode SPA transitions
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  const targetUrl = changeInfo.url || tab.url;
+
+  if (isAIModeUrl(targetUrl)) {
+    const data = await chrome.storage.local.get(["learnModeActive"]);
+    if (data.learnModeActive ?? true) {
+      chrome.tabs.update(tabId, { url: BLOCKED_URL });
+    }
+  }
+});
+
+// Listen for state changes to learnModeActive
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "local" && changes.learnModeActive !== undefined) {
     updateBlockingRules(changes.learnModeActive.newValue);
@@ -63,7 +101,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
-// SAFE INITIALIZATION: Preserve existing logs and state
+// Safe Initialization
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get(["learnModeActive", "logs"]);
   

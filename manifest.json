@@ -5,9 +5,11 @@
   "description": "Add friction back to learning by auto-blocking major AI tools.",
   "permissions": [
     "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
     "storage",
     "alarms",
-    "tabs"
+    "tabs",
+    "webNavigation"
   ],
   "incognito": "spanning",
   "icons": {
@@ -29,7 +31,14 @@
     "*://*.claude.ai/*",
     "*://*.gemini.google.com/*",
     "*://*.perplexity.ai/*",
-    "*://*.copilot.microsoft.com/*"
+    "*://*.copilot.microsoft.com/*",
+    "*://*.google.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html"],
+      "matches": ["<all_urls>"]
+    }
   ],
   "background": {
     "service_worker": "background.js"
